@@ -43,7 +43,7 @@ public class ProductController {
     @PostMapping
     @Operation(summary = "Allows to create a product", description = "Send product without id")
     @ApiResponse(responseCode = "200", description = "Product created successfully")
-    public ResponseEntity<Product> saveProduct(@RequestBody Product product){
+    public ResponseEntity<Product> saveProduct(@RequestBody Product product) throws BadRequestException {
         return ResponseEntity.status(200).body(productService.saveProduct(product));
     }
 
