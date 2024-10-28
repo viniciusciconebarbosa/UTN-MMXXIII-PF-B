@@ -1,5 +1,7 @@
 package com.pizzerialavera.e_commerce.service;
 
+import com.pizzerialavera.e_commerce.entity.Additive;
+import com.pizzerialavera.e_commerce.entity.Category;
 import com.pizzerialavera.e_commerce.entity.Ingredient;
 import com.pizzerialavera.e_commerce.entity.Product;
 import com.pizzerialavera.e_commerce.exception.BadRequestException;
@@ -23,33 +25,61 @@ public class ProductService {
     @Autowired
     private IngredientService ingredientService;
 
+    @Autowired
+    private CategoryService categoryService;
+
+    @Autowired
+    private AdditiveService additiveService;
+
     // Usa LogManager para obtener el logger
     private static final Logger logger = LogManager.getLogger(ProductService.class);
 
     // Método para guardar un producto
-    public Product saveProduct(Product product) {
-        // Verificar si ya existe un producto con el mismo nombre y tamaño
-        Optional<Product> existingProduct = productRepository.findByNameAndSize(product.getName(), product.getSize());
-        if (existingProduct.isPresent()) {
-            logger.warn("Ya existe un producto con el nombre '{}' y tamaño '{}'. No se guardará nuevamente.", product.getName(), product.getSize());
-            return existingProduct.get(); // Retorna el producto existente si se desea
+    public Product saveProduct(Product product) throws BadRequestException {
+        // Primero verifica si la categoría existe a través del nombre
+        Optional<Category> existingCategory = categoryService.findByName(product.getCategory().getName());
+        Category category;
+
+        if (existingCategory.isPresent()) {
+            category = existingCategory.get(); // Si ya existe, usa la existente
+        } else {
+            category = categoryService.save(product.getCategory()); // Crea la nueva categoría si no existe
         }
 
-        // Verifica si los ingredientes existen y los agrega o los crea
+        product.setCategory(category);
+
+        // Procesa los ingredientes
         Set<Ingredient> ingredients = new HashSet<>();
         for (Ingredient ingredient : product.getIngredient()) {
             Optional<Ingredient> existingIngredient = ingredientService.findByString(ingredient.getName());
             if (existingIngredient.isPresent()) {
                 ingredients.add(existingIngredient.get());
             } else {
-                // Si no existe, se crea un nuevo ingrediente
                 Ingredient newIngredient = ingredientService.createIngredient(ingredient);
                 ingredients.add(newIngredient);
             }
         }
         product.setIngredients(ingredients);
+
+        // Procesa los aditivos de manera similar
+        Set<Additive> additives = new HashSet<>();
+        for (Additive additive : product.getAdditive()) {
+            Optional<Additive> existingAdditive = additiveService.findByString(additive.getName());
+            if (existingAdditive.isPresent()) {
+                additives.add(existingAdditive.get());
+            } else {
+                Additive newAdditive = additiveService.createAdditive(additive);
+                additives.add(newAdditive);
+            }
+        }
+        product.setAdditives(additives);
+
         return productRepository.save(product);
     }
+
+
+
+
 
     // Método para obtener todos los productos
     public List<Product> findAll() {

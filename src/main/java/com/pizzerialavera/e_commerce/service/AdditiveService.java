@@ -67,7 +67,7 @@ public class AdditiveService {
         additiveRepository.deleteById(id);
     }
 
-    public void findByString(String name) {
-        additiveRepository.findByName(name);
+    public Optional<Additive> findByString(String name) {
+        return additiveRepository.findByName(name); // Return the result from the repository
     }
 }

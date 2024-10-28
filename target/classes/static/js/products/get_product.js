@@ -53,8 +53,12 @@ window.addEventListener('load', function () {
                         (Array.isArray(producto.additive) ?
                             producto.additive.map(aditivo => aditivo.name).join(", ") :
                             '') + '</td>' + // Aditivos
-                        '<td class="td_precio_adicionales small">' + "$ " + (producto.additionalPrice ? producto.additionalPrice.toFixed(2) : '0.00') + '</td>' + // Precio Adicionales
-                        '<td>' + deleteButton + '</td>'; // Botón de eliminar
+                        '<td class="td_precio_adicionales small">' +
+                        "$ " + (Array.isArray(producto.additive) && producto.additive.length > 0
+                            ? producto.additive[0].price.toFixed(2)
+                            : '0.00') +
+                        '</td>' + // Precio Adicionales
+                    '<td>' + deleteButton + '</td>'; // Botón de eliminar
                 }
             }).catch(error => {
             console.error('Hubo un problema con la operación fetch:', error);
