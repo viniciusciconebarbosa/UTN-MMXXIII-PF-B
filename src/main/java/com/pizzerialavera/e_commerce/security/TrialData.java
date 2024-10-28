@@ -53,11 +53,9 @@ public class TrialData implements ApplicationRunner {
         // Itera sobre las filas del archivo de Excel
         for (Row row : sheet) {
             if (row.getRowNum() == 0) {
-                // Saltar la fila de encabezado
-                continue;
+                continue; // Saltar la fila de encabezado
             }
 
-            // Leer las celdas con manejo de tipo
             String categoryName = getStringCellValue(row.getCell(0));
             String productName = getStringCellValue(row.getCell(1));
             double productPrice = getNumericCellValue(row.getCell(2));
@@ -68,25 +66,21 @@ public class TrialData implements ApplicationRunner {
             String size = getStringCellValue(row.getCell(7));
             String image = getStringCellValue(row.getCell(8));
 
-            // Verifica si la categoría ya existe utilizando el servicio
-            Category category = categoryService.save(new Category(categoryName));
+            if (!categoryName.isEmpty() && !productName.isEmpty()) {
+                Category category = categoryService.save(new Category(categoryName));
+                Product product = new Product(productName, productPrice, productDescription, image, size, category);
 
-            // Crear el producto
-            Product product = new Product(productName, productPrice, productDescription, image, size, category);
+                // Inicializar conjuntos vacíos si están vacíos para evitar valores nulos
+                Set<Ingredient> ingredients = !ingredientsList.isEmpty() ? parseIngredients(ingredientsList) : new HashSet<>();
+                product.setIngredients(ingredients);
 
-            // Agregar ingredientes
-            Set<Ingredient> ingredients = parseIngredients(ingredientsList);
-            product.setIngredients(ingredients);
-
-            // Agregar aditivos
-            Set<Additive> additives = parseAdditives(additivesList, additivesPrice);
-            if (additives != null && !additives.isEmpty()) {
+                Set<Additive> additives = !additivesList.isEmpty() ? parseAdditives(additivesList, additivesPrice) : new HashSet<>();
                 product.setAdditives(additives);
-            }
 
-            // Guardar el producto utilizando el servicio
-            productService.saveProduct(product);
+                productService.saveProduct(product);
+            }
         }
+
 
         // Cerrar el archivo
         workbook.close();
