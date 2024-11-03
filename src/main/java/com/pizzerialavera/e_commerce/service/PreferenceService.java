@@ -1,6 +1,5 @@
 package com.pizzerialavera.e_commerce.service;
 
-
 import com.mercadopago.MercadoPagoConfig;
 import com.mercadopago.client.preference.PreferenceClient;
 import com.mercadopago.client.preference.PreferenceRequest;
@@ -18,35 +17,32 @@ import java.util.List;
 @Service
 public class PreferenceService {
 
-    @Value("${mercado_pago_access_token}")
+    @Value("${mercado_pago_ACCESS_TOKEN}")
     private String accessToken;
 
-    public Preference createPreference() {
-        MercadoPagoConfig.setAccessToken(accessToken); // Inyectar Access Token desde application.properties
+    public Preference createPreference(com.pizzerialavera.e_commerce.entity.PreferenceRequest preferenceRequest) {
+        MercadoPagoConfig.setAccessToken(accessToken);
         PreferenceClient client = new PreferenceClient();
 
         // Crear un item de preferencia
-        PreferenceItemRequest itemRequest = PreferenceItemRequest.builder()
-                .id("1234")
-                .title("Dummy Title")
-                .description("Dummy description")
-                .pictureUrl("https://www.myapp.com/myimage.jpg")
-                .categoryId("car_electronics")
-                .quantity(1)
-                .currencyId("BRL") // Cambia a la moneda que estés utilizando
-                .unitPrice(new BigDecimal("10"))
-                .build();
-
         List<PreferenceItemRequest> items = new ArrayList<>();
-        items.add(itemRequest);
+        for (com.pizzerialavera.e_commerce.entity.PreferenceRequest.PreferenceItem item : preferenceRequest.getItems()) {
+            PreferenceItemRequest itemRequest = PreferenceItemRequest.builder()
+                    .id(item.getId())
+                    .title(item.getTitle())
+                    .unitPrice(item.getUnitPrice())
+                    .quantity(item.getQuantity())
+                    .build();
+            items.add(itemRequest);
+        }
 
         // Crear la solicitud de preferencia
-        PreferenceRequest preferenceRequest = PreferenceRequest.builder()
+        PreferenceRequest preferenceRequestToSend = PreferenceRequest.builder()
                 .items(items)
                 .backUrls(PreferenceBackUrlsRequest.builder()
-                        .success("https://test.com/success")
-                        .failure("https://test.com/failure")
-                        .pending("https://test.com/pending")
+                        .success(preferenceRequest.getSuccessUrl())
+                        .failure(preferenceRequest.getFailureUrl())
+                        .pending(preferenceRequest.getPendingUrl())
                         .build())
                 .autoReturn("all")
                 .payer(PreferencePayerRequest.builder()
@@ -58,7 +54,7 @@ public class PreferenceService {
 
         // Crear la preferencia
         try {
-            return client.create(preferenceRequest);
+            return client.create(preferenceRequestToSend);
         } catch (Exception e) {
             e.printStackTrace();
             return null;
