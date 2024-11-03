@@ -8,6 +8,7 @@ import com.mercadopago.exceptions.MPApiException;
 import com.mercadopago.exceptions.MPException;
 import com.mercadopago.resources.payment.Payment;
 import com.pizzerialavera.e_commerce.entity.PaymentRequest;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -15,9 +16,13 @@ import java.math.BigDecimal;
 @Service
 public class PaymentService {
 
+    @Value("${mercado_pago_ACCESS_TOKEN}")
+    private String accessToken;
+
     public Payment createPayment(PaymentRequest paymentRequest) {
-        MercadoPagoConfig.setAccessToken("YOUR_ACCESS_TOKEN");
+        MercadoPagoConfig.setAccessToken(accessToken);
         PaymentClient client = new PaymentClient();
+
 
         PaymentCreateRequest createRequest = PaymentCreateRequest.builder()
                 .transactionAmount(paymentRequest.getTransactionAmount())
