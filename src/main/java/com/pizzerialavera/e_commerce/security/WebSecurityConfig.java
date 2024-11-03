@@ -9,6 +9,11 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import java.util.List;
 
 @Configuration
 @EnableWebSecurity
@@ -31,18 +36,26 @@ public class WebSecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(csrf -> csrf.disable()) // Disable CSRF protection
-                .headers(headers -> headers.frameOptions(frameOptions -> frameOptions.disable())) // Enable H2 console access
+                .cors() // Habilitar CORS
+                .and()
+                .csrf(csrf -> csrf.disable()) // Deshabilitar protección CSRF
+                .headers(headers -> headers.frameOptions(frameOptions -> frameOptions.disable())) // Habilitar consola H2
                 .authorizeHttpRequests(authz -> authz
-                        .requestMatchers("/login", "/documentation", "/api-docs").permitAll() // Allow access to login
-                        .requestMatchers("/post_products.html", "/get_products.html", "/post_customers.html", "/get_customers.html")
-                        .hasRole("ADMIN") // Restrict access to ADMIN
-                        .anyRequest().authenticated() // All other requests require authentication
-                )
-                .formLogin(formLogin -> formLogin.defaultSuccessUrl("/index.html", true)) // Customize form login
-                .logout(logout -> logout.logoutUrl("/logout").logoutSuccessUrl("/login?logout")) // Customize logout
-                .authenticationProvider(daoAuthenticationProvider());
-
+                        .anyRequest().permitAll() // Permitir acceso sin autenticación a todas las peticiones
+                );
         return http.build();
+    }
+
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowedOrigins(List.of("http://localhost:5173")); // Origen permitido
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE")); // Métodos permitidos
+        configuration.setAllowCredentials(true);
+        configuration.setAllowedHeaders(List.of("Authorization", "Cache-Control", "Content-Type"));
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
     }
 }

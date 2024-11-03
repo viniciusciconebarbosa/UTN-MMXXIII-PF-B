@@ -40,21 +40,24 @@ public class TrialData implements ApplicationRunner {
 
     @Override
     public void run(ApplicationArguments args) throws Exception {
-        // Create Users
+        // Verificar si ya existen productos o categorías en la base de datos
+        if (productService.count() > 0 || categoryService.count() > 0) {
+            System.out.println("Los datos preseteados ya existen, omitiendo carga inicial.");
+            return;
+        }
+
+        // Crear usuarios solo si no existen
         createUserIfNotExists("jorgito", "jpereryradh", "user@user.com", "user", UserRole.ROLE_USER);
         createUserIfNotExists("admin", "admin", "admin@admin.com", "admin", UserRole.ROLE_ADMIN);
         createUserIfNotExists("manager", "manager", "manager@manager.com", "manager", UserRole.ROLE_MANAGER);
 
-        // Ruta al archivo de Excel
+        // Cargar productos desde el archivo Excel
         InputStream file = getClass().getResourceAsStream("/menu.xlsx");
         Workbook workbook = WorkbookFactory.create(file);
         Sheet sheet = workbook.getSheetAt(0);
 
-        // Itera sobre las filas del archivo de Excel
         for (Row row : sheet) {
-            if (row.getRowNum() == 0) {
-                continue; // Saltar la fila de encabezado
-            }
+            if (row.getRowNum() == 0) continue;
 
             String categoryName = getStringCellValue(row.getCell(0));
             String productName = getStringCellValue(row.getCell(1));
@@ -70,7 +73,6 @@ public class TrialData implements ApplicationRunner {
                 Category category = categoryService.save(new Category(categoryName));
                 Product product = new Product(productName, productPrice, productDescription, image, size, category);
 
-                // Inicializar conjuntos vacíos si están vacíos para evitar valores nulos
                 Set<Ingredient> ingredients = !ingredientsList.isEmpty() ? parseIngredients(ingredientsList) : new HashSet<>();
                 product.setIngredients(ingredients);
 
@@ -81,11 +83,10 @@ public class TrialData implements ApplicationRunner {
             }
         }
 
-
-        // Cerrar el archivo
         workbook.close();
         file.close();
     }
+
 
     // Método para obtener el valor de una celda como String
     private String getStringCellValue(Cell cell) {

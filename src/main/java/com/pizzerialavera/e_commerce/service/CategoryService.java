@@ -30,6 +30,10 @@ public class CategoryService {
         return categoryRepository.findById(id);
     }
 
+    public long count() {
+        return categoryRepository.count();
+    }
+
     public Category save(Category category) {
         // Verificar si ya existe una categoría con el mismo nombre
         Optional<Category> existingCategory = categoryRepository.findByName(category.getName());

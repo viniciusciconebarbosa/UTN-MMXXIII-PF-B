@@ -31,6 +31,11 @@ public class ProductService {
     @Autowired
     private AdditiveService additiveService;
 
+
+    public long count() {
+        return productRepository.count();
+    }
+
     // Usa LogManager para obtener el logger
     private static final Logger logger = LogManager.getLogger(ProductService.class);
 
