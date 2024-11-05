@@ -7,42 +7,52 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
 
 @Service
 public class UserService implements UserDetailsService {
+
     @Autowired
     private UserRepository usuarioRepository;
-    //aca necesitamos un metodo que nos devuelva la autenticación
+
+    @Autowired
+    private BCryptPasswordEncoder bCryptPasswordEncoder;
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        //como resolvemos?
-        Optional<User> usuarioBuscado= usuarioRepository.findByEmail(username);
-        if(usuarioBuscado.isPresent()){
-            return usuarioBuscado.get();
-        }else{
-            throw new UsernameNotFoundException("usuario inexistente: "+username);
+        Optional<User> usuarioBuscado = usuarioRepository.findByEmail(username);
+        if (usuarioBuscado.isPresent()) {
+            return usuarioBuscado.get(); // Asegúrate que User implementa UserDetails
+        } else {
+            throw new UsernameNotFoundException("Usuario inexistente: " + username);
         }
-
     }
-    // Método para verificar si el email ya existe
+
     public boolean emailExists(String email) {
         return usuarioRepository.existsByEmail(email);
     }
 
-    // Método para registrar un nuevo usuario
     public User registerUser(String nombre, String userName, String email, String password, UserRole role) {
         if (emailExists(email)) {
             throw new IllegalArgumentException("El correo " + email + " ya está en uso.");
         }
-
-        User user = new User(nombre, userName, email, password, role);
+        String encodedPassword = bCryptPasswordEncoder.encode(password);
+        User user = new User(nombre, userName, email, encodedPassword, role);
         return usuarioRepository.save(user);
     }
 
+    public User authenticate(String email, String password) {
+        User user = usuarioRepository.findByEmail(email).orElse(null); // Corrección aquí
+        if (user != null && bCryptPasswordEncoder.matches(password, user.getPassword())) {
+            return user; // Las contraseñas son iguales
+        }
+        return null; // Credenciales inválidas
+    }
 
-
+    public User findUserByEmail(String email) {
+        return usuarioRepository.findByEmail(email).orElse(null);
+    }
 }

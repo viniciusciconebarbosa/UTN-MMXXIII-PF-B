@@ -9,18 +9,42 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestController
+@RequestMapping("/api/users")
 public class UserController {
+
     @Autowired
     private UserService userService;
+
+    @PostMapping("/authenticate")
+    public ResponseEntity<User> authenticateUser(@RequestBody Map<String, String> credentials) {
+        String email = credentials.get("email");
+        String password = credentials.get("password");
+        User user = userService.authenticate(email, password); // Cambiado para obtener el objeto User
+
+        if (user != null) {
+            return ResponseEntity.ok(user); // Devuelve el usuario autenticado
+        }
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null); // 401 si las credenciales son incorrectas
+    }
+
+    @GetMapping("/current")
+    public ResponseEntity<User> getCurrentUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String email = authentication.getName();
+
+        User user = userService.findUserByEmail(email);
+        if (user != null) {
+            return ResponseEntity.ok(user);
+        }
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+    }
 
     @PostMapping("/register")
     public ResponseEntity<?> registerUser(@RequestBody User user) {
@@ -29,7 +53,7 @@ public class UserController {
                     user.getNombre(),
                     user.getUserName(),
                     user.getEmail(),
-                    user.getPassword(),
+                    user.getPassword(), // Se guarda la contraseña cifrada
                     user.getUsuarioRole()
             );
             return ResponseEntity.status(HttpStatus.CREATED).body(registeredUser);
@@ -54,4 +78,3 @@ public class UserController {
         return authentication.getPrincipal();
     }
 }
-
